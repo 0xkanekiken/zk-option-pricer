@@ -6,3 +6,4 @@ edition = "2021"
 
 [dependencies]
 sp1-zkvm = { git = "https://github.com/0xkanekiken/sp1.git" }
+serde = { version = "1.0.196", features = ["derive"] }
