@@ -7,8 +7,27 @@ default-run = "option-pricer-script"
 [dependencies]
 itertools = "0.12.1"
 sp1-sdk = { git = "https://github.com/0xkanekiken/sp1.git" }
-serde = { version = "1.0.196", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
 bincode = "1.3"
+borsh = { version = "0.10.3", default-features = false }
+bytes = { version = "1.2.1", features = ["serde"] }
+primitive-types = { version = "0.12.2", features = ["serde"] }
+sp-core-hashing = "14.0.0"
+subxt = { version = "0.29" }
+avail-subxt = { git = "https://github.com/availproject/avail.git", tag = "v1.6.3", features = ["std"]}
+anyhow = "1.0.66"
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive", "full", "bit-vec"] }
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+pin-project = { version = "1.1.3" }
+async-trait = "0.1.71"
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+reqwest = { version = "0.11", features = ["json"] }
+thiserror = "1.0.50"
+sp-keyring = { version = "24" }
+sp-core = { version = "21"}
+hex = { version = "0.4.3", default-features = false, features = ["alloc", "serde"] }
+
 
 [build-dependencies]
 sp1-helper = { git = "https://github.com/0xkanekiken/sp1.git" }
