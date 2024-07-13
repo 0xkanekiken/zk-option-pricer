@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use bytes::Bytes;
 use sp_core::H256;
 use tracing::info;
-use core::time::Duration;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
@@ -20,19 +19,6 @@ use sp_core::crypto::Pair as PairTrait;
 use sp_keyring::sr25519::sr25519::Pair;
 use subxt::tx::PairSigner;
 use subxt::OnlineClient;
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Confidence {
-    pub block: u32,
-    pub confidence: f64,
-    pub serialised_confidence: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ExtrinsicsData {
-    pub block: u32,
-    pub extrinsics: Vec<AppUncheckedExtrinsic>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq)]
 /// Simple structure that implements the Read trait for a buffer and  counts the number of bytes read from the beginning.
@@ -183,38 +169,20 @@ impl AvailBlobTransaction {
 /// Runtime configuration for the DA service
 #[derive(Clone, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct DaServiceConfig {
-    pub light_client_url: String,
     pub node_client_url: String,
     //TODO: Safer strategy to load seed so it is not accidentally revealed.
     pub seed: String,
-    pub polling_timeout: Option<u64>,
-    pub polling_interval: Option<u64>,
     pub app_id: u32,
 }
-
-const DEFAULT_POLLING_TIMEOUT: Duration = Duration::from_secs(60);
-const DEFAULT_POLLING_INTERVAL: Duration = Duration::from_secs(1);
 
 #[derive(Clone)]
 pub struct DaProvider {
     pub node_client: OnlineClient<AvailConfig>,
-    pub light_client_url: String,
     signer: PairSigner<AvailConfig, Pair>,
-    polling_timeout: Duration,
-    polling_interval: Duration,
     app_id: u32,
 }
 
 impl DaProvider {
-    fn appdata_url(&self, block_num: u64) -> String {
-        let light_client_url = self.light_client_url.clone();
-        format!("{light_client_url}/v1/appdata/{block_num}")
-    }
-
-    fn confidence_url(&self, block_num: u64) -> String {
-        let light_client_url = self.light_client_url.clone();
-        format!("{light_client_url}/v1/confidence/{block_num}")
-    }
 
     pub async fn new(config: DaServiceConfig) -> Self {
         let pair = Pair::from_string_with_seed(&config.seed, None).unwrap();
@@ -223,26 +191,16 @@ impl DaProvider {
         let node_client = avail_subxt::build_client(config.node_client_url.to_string(), false)
             .await
             .unwrap();
-        let light_client_url = config.light_client_url;
 
         DaProvider {
             node_client,
-            light_client_url,
             signer,
-            polling_timeout: match config.polling_timeout {
-                Some(i) => Duration::from_secs(i),
-                None => DEFAULT_POLLING_TIMEOUT,
-            },
-            polling_interval: match config.polling_interval {
-                Some(i) => Duration::from_secs(i),
-                None => DEFAULT_POLLING_INTERVAL,
-            },
             app_id: config.app_id,
         }
     }
 }
 
-async fn send_transaction(da_provider: &DaProvider, blob: &[u8]) -> Result<(), anyhow::Error> {
+pub async fn send_transaction(da_provider: &DaProvider, blob: &[u8]) -> Result<(), anyhow::Error> {
     let data_transfer = api::tx()
         .data_availability()
         .submit_data(BoundedVec(blob.to_vec()));
@@ -254,6 +212,8 @@ async fn send_transaction(da_provider: &DaProvider, blob: &[u8]) -> Result<(), a
         .tx()
         .sign_and_submit_then_watch(&data_transfer, &da_provider.signer, extrinsic_params)
         .await?;
+
+    println!("Transaction submitted");
 
     info!("Transaction submitted: {:#?}", h.extrinsic_hash());
 
