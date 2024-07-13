@@ -66,6 +66,9 @@ pub fn main() {
     println!("Call option price: {:.4}", call);
     println!("Put option price: {:.4}", put);
 
-    // sp1_zkvm::io::write(&call);
-    // sp1_zkvm::io::write(&b);
+    let call_bytes = bincode::serialize(&call).unwrap();
+    let put_bytes = bincode::serialize(&put).unwrap();
+
+    sp1_zkvm::io::commit_slice(&call_bytes);
+    sp1_zkvm::io::commit_slice(&put_bytes);
 }
